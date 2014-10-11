@@ -119,8 +119,8 @@ svg.append("g")
     .attr("class", "y axis")
     .call(yAxis);
 
-d3.json("ages2.json", function(error, faithful) {
-  var data = histogram(faithful),
+d3.json("ages2.json", function(error, ages) {
+  var data = histogram(ages),
       kde = kernelDensityEstimator(epanechnikovKernel(7), x.ticks(100));
 
   //console.log(data);
