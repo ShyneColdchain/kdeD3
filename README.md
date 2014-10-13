@@ -14,3 +14,10 @@ http://bl.ocks.org/Caged/6476579
 2. sampleAge is 500 randomly choosen individuals from the population
 3. kdeD3 creates interactive histogram with kernel density estimation 
 4. kde for sample can be compared to real values from population for statistical inference 
+
+
+Goals: 
+
+1. further interactivity!
+2. metadata appear with mouse over (ex. % female / male) 
+3. both sampleAge and allAge histograms on single plot
