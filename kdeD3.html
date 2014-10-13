@@ -73,12 +73,15 @@ var margin = {top: 20, right: 30, bottom: 30, left: 40},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
+var minX = 0,
+	maxX = 100;
+
 var x = d3.scale.linear()
-    .domain([0, 100])
+    .domain([minX, maxX])
     .range([0, width]);
 
 var y = d3.scale.linear()
-    .domain([0, .1])
+    .domain([0, .25])
     .range([height, 0]);
 
 var xAxis = d3.svg.axis()
@@ -96,15 +99,15 @@ var line = d3.svg.line()
 
 var histogram = d3.layout.histogram()
     .frequency(false)
-    .bins(x.ticks(40));
+    .bins(x.ticks(30));
 
-var svg = d3.select("body").append("svg")
+var canvas = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-svg.append("g")
+canvas.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + height + ")")
     .call(xAxis)
@@ -115,39 +118,45 @@ svg.append("g")
     .style("text-anchor", "end")
     .text("Age of infected people (year)");
 
-svg.append("g")
+canvas.append("g")
     .attr("class", "y axis")
     .call(yAxis);
 
-d3.json("ages2.json", function(error, ages) {
-  var data = histogram(ages),
-      kde = kernelDensityEstimator(epanechnikovKernel(7), x.ticks(100));
+d3.json("sampleAge.json", function(error, age) {
+	//console.log(age);
+	var minX = d3.min(age);
+	var maxX = d3.max(age);
+	
+	var data = histogram(age),
+		kde = kernelDensityEstimator(epanechnikovKernel(7), x.ticks(100));
 
-  //console.log(data);
-  var tip = d3.tip()
-  	.attr('class', 'd3-tip')
-  	.offset([-10, 0])
-  	.html(function(d) { 
-  		return "<span style='color:white'>"+d3.round((d.y * 100))+ "%" + "</span>"
-  		+" infected"; });
-		
-	svg.call(tip);
+	var tipPlot = histogram(age);	
 
-  svg.selectAll(".bar")
-      .data(data)
-    .enter().insert("rect", ".axis")
-      .attr("class", "bar")
-      .attr("x", function(d) { return x(d.x) + 1; })
-      .attr("y", function(d) { return y(d.y); })
-      .attr("width", x(data[0].dx + data[0].x) - x(data[0].x) - 1)
-      .attr("height", function(d) { return height - y(d.y); })
+	//console.log(data);
+	var tip = d3.tip()
+	.attr('class', 'd3-tip')
+	.offset([-10, 0])
+	.html(function(d) { 
+		return "<span style='color:white'>" + d3.round((d.y * 100)) 
+		+ "%" + "</span>" + " infected"; });
+
+	canvas.call(tip);
+
+	var bars = canvas.selectAll(".bar")
+	  .data(data)
+	.enter().insert("rect", ".axis")
+	  .attr("class", "bar")
+	  .attr("x", function(d) { return x(d.x) + 1; })
+	  .attr("y", function(d) { return y(d.y); })
+	  .attr("width", x(data[0].dx + data[0].x) - x(data[0].x) - 1)
+	  .attr("height", function(d) { return height - y(d.y); })
 		.on('mouseover', tip.show)
 		.on('mouseout', tip.hide);
 
-  svg.append("path")
-      .datum(kde(faithful))
-      .attr("class", "line")
-      .attr("d", line);
+	canvas.append("path")
+	  .datum(kde(age))
+	  .attr("class", "line")
+	  .attr("d", line);
 });
 
 function kernelDensityEstimator(kernel, x) {
