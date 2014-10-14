@@ -7,17 +7,25 @@ body {
   font: 10px sans-serif;
 }
 
-.bar {
-	fill: #d63378;
+.sampleBar {
+	/*fill: #d63378;*/
+	fill: hsla(292, 100%, 79%, .8);
 	shape-rendering: crispEdges;
 }
 
-.bar:hover {
+.allBar {
+	/*fill: #00FFFF;*/
+	fill: hsla(0, 0%, 0%, .1);
+	shape-rendering: crispEdges;
+}
+
+.sampleBar:hover {
 	fill: #612250;
 }
 
 .line {
-  fill: none;
+  fill: hsla(360, 100%, 20%, 0.58);
+  /*fill: none;*/
   stroke: #000;
   stroke-width: 2.5px;
 }
@@ -118,11 +126,25 @@ canvas.append("g")
     .style("text-anchor", "end")
     .text("Age of infected people (year)");
 
-canvas.append("g")
-    .attr("class", "y axis")
-    .call(yAxis);
+//canvas.append("g")
+//    .attr("class", "y axis")
+ //   .call(yAxis);
 
-d3.json("sampleAge.json", function(error, age) {
+d3.json("data/allAge.json", function(error, allAge) {
+
+	var allData = histogram(allAge);
+
+	var allBars = canvas.selectAll(".allBar")
+		.data(allData)
+		.enter().insert("rect", ".axis")
+		  .attr("class", "allBar")
+		  .attr("x", function(d) { return x(d.x) + 1; })
+		  .attr("y", function(d) { return y(d.y); })
+		  .attr("width", x(allData[0].dx + allData[0].x) - x(allData[0].x) - 1)
+		  .attr("height", function(d) { return height - y(d.y); });
+})
+
+d3.json("data/sampleAge.json", function(error, age) {
 	//console.log(age);
 	var minX = d3.min(age);
 	var maxX = d3.max(age);
@@ -130,7 +152,7 @@ d3.json("sampleAge.json", function(error, age) {
 	var data = histogram(age),
 		kde = kernelDensityEstimator(epanechnikovKernel(7), x.ticks(100));
 
-	var tipPlot = histogram(age);	
+	//var tipPlot = histogram(age);	
 
 	//console.log(data);
 	var tip = d3.tip()
@@ -138,25 +160,83 @@ d3.json("sampleAge.json", function(error, age) {
 	.offset([-10, 0])
 	.html(function(d) { 
 		return "<span style='color:white'>" + d3.round((d.y * 100)) 
-		+ "%" + "</span>" + " infected"; });
+		+ "%" + "</span>" + " infected"; })
 
+
+	/*tip.transition()
+		.attr("y", function(d) {
+			return height - y(d.y) * 1.5;
+		});
+*/
 	canvas.call(tip);
 
-	var bars = canvas.selectAll(".bar")
+	var sampleBars = canvas.selectAll(".sampleBar")
 	  .data(data)
 	.enter().insert("rect", ".axis")
-	  .attr("class", "bar")
-	  .attr("x", function(d) { return x(d.x) + 1; })
-	  .attr("y", function(d) { return y(d.y); })
-	  .attr("width", x(data[0].dx + data[0].x) - x(data[0].x) - 1)
-	  .attr("height", function(d) { return height - y(d.y); })
-		.on('mouseover', tip.show)
-		.on('mouseout', tip.hide);
+		.attr("class", "sampleBar")
+		.attr("x", function(d) { return x(d.x) + 1; })
+		.attr("y", function(d) { return y(d.y); })
+		.attr("width", x(data[0].dx + data[0].x) - x(data[0].x) - 1)
+		.attr("height", 0)
+		.attr('pointer-events', 'none')
+			.on('mouseover', tip.show)
+			.on('mouseout', tip.hide);
+		
+	sampleBars
+		.transition()
+		.duration(2500)
+		.delay(500)
+		.attr("height", function(d) { return height - y(d.y); })
+		.transition().attr('pointer-events', '');
+	
+			//.on('mouseover', tip.show)
+			//.on('mouseout', tip.hide);
+		
+	//var allBars = canvas.selectAll(".allBar")
+
+	var tipKDE = d3.tip()
+		.attr('class', 'd3-tip')
+		.style("fill", "white");
+
+	var kdeLine = canvas.append("path")
+		.datum(kde(age))
+		.attr("class", "line")
+		.attr("d", line);
+		
+	kdeLine.append("text")
+		.attr("text-anchor", "middle")
+		.text("KDE");
+	 
+	var totalLength = kdeLine.node().getTotalLength();
+	
+	kdeLine
+		.style("fill-opacity", 0)
+		.attr("stroke-dasharray", totalLength + " " + totalLength)
+		.attr("stroke-dashoffset", totalLength)
+		.transition()
+			.duration(2500)
+			.delay(1500)
+			.ease("linear")
+			.attr("stroke-dashoffset", 0)
+			.style("fill-opacity", 0.8);
+		 
+		 
+	// .attrTween("d", pathTween);
+	 /* function pathTween() { 
+	  	var interpolate = d3.scale.quantile() 
+	  		.domain([0, 1])
+	  		.range(d3.range(1, kde(age) + 1));
+	  	return function(d) {
+	  		return line(kde(age).slice(0, interpolate(d)));
+	  	};
+	  }
 
 	canvas.append("path")
 	  .datum(kde(age))
 	  .attr("class", "line")
-	  .attr("d", line);
+	  .attr("d", line)
+	  .transition()
+		  .ease("elastic");*/
 });
 
 function kernelDensityEstimator(kernel, x) {
