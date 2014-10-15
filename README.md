@@ -10,9 +10,9 @@ http://bl.ocks.org/Caged/6476579
 
 --Learning D3!-- 
 
-1. allAge is 5000 simulated individuals of different ages representing the population *Gray histogram*
-2. sampleAge is 500 randomly choosen individuals from the population *Purple histogram*
-3. kdeD3 creates interactive histogram with kernel density estimation *black line with red fill* 
+1. allAge is 5000 simulated individuals of different ages representing the population - *Gray histogram*
+2. sampleAge is 500 randomly choosen individuals from the population  - *Purple histogram*
+3. kdeD3 creates interactive histogram with kernel density estimation - *black line with red fill* 
 4. kde for sample can be compared to real values from population for statistical inference 
 
 
