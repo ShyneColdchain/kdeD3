@@ -23,11 +23,21 @@ body {
 	fill: #612250;
 }
 
+.allBar:hover {
+	fill: hsla(250, 25%, 25%, .8);
+	shape-rendering: crispEdges;
+}
+
 .line {
   fill: hsla(360, 100%, 20%, 0.58);
   /*fill: none;*/
   stroke: #000;
   stroke-width: 2.5px;
+}
+
+.line:hover {
+    fill: hsla(360, 100%, 20%, 0.8);
+    stroke-width: 4px;
 }
 
 .axis path,
@@ -130,12 +140,19 @@ canvas.append("g")
     .attr("class", "y axis")
     .call(yAxis);
 
-d3.json("allAge.json", function(error, popAge) {
+d3.json("allAge.json", function(error, data) {
 	//var allData = histogram(allAge.age);
-	var allAge = histogram(popAge.age);
+	var allAge = histogram(data.age);
+	
+	// data = object containing age and gender arrays
+	
+	var total = [allAge, data.gender];
+	
+	console.log(total);
+	console.log(total[1]);
 	
 	// total male, total female from binary json 
-	function getCount(gend) { 
+	/*function getCount(gend) { 
 		var i = 0;
 		var male = 0,
 		 female = 0;
@@ -152,14 +169,14 @@ d3.json("allAge.json", function(error, popAge) {
 		return [male, female];
 	};
 	
-	var genders = getCount(popAge.gender);
+	var genders = getCount(data.gender);
 	var totMale = genders[0];
-	var totFemale = genders[1];
+	var totFemale = genders[1];*/
 	
 	console.log(allAge);
 	console.log(allAge[2].length);
 	
-	function binIndex(alpha) {
+	/*function binIndex(alpha) {
 		
 		// results are indices + 1 (so -1 laterrr)
 		
@@ -195,7 +212,7 @@ d3.json("allAge.json", function(error, popAge) {
 			return 0;
 		}
 	};
-	
+	*/
 	/*
 	var oneBeg = binSizes[0];
 	var oneEnd = binSizes[1];
@@ -208,9 +225,10 @@ d3.json("allAge.json", function(error, popAge) {
 	var fiveBeg = binSizes[8];
 	var fiveEnd = binSizes[9];*/
 	
-	console.log(binSizes);
-	console.log(beg);
-	console.log(end);
+	//console.log(binSizes);
+	//console.log(beg);
+	//console.log(end);
+	
 		
 	var allTip = d3.tip()
 		.attr('class', 'd3-tip')
@@ -229,13 +247,15 @@ d3.json("allAge.json", function(error, popAge) {
 	canvas.call(allTip);
 
 	var allBars = canvas.selectAll(".allBar")
-		.data(allAge)
+		//.data(total, function(d) { return d.allAge; })
+		.data(total)
 		.enter().insert("rect", ".axis")
 			.attr("class", "allBar")
-			.attr("x", function(d) { return x(d.x) + 1; })
-			.attr("y", function(d) { return y(d.y); })
-			.attr("width", x(allAge[0].dx + allAge[0].x) - x(allAge[0].x) - 1)
-			.attr("height", function(d) { return height - y(d.y); })
+			.attr("x", function(d) { return x(d[allAge].x) - 15; })
+			.attr("y", function(d) { return y(d[allAge].y); })
+			//.attr("width", x(allAge[0].dx + allAge[0].x) - x(allAge[0].x) - 1)
+			.attr("width", function(d) { return x(d[allAge].dx) - 15; })
+			.attr("height", function(d) { return height - y(d[allAge].y); })
 			.on('mouseover', allTip.show)
 			.on('mouseout', allTip.hide);
 			
@@ -277,7 +297,7 @@ d3.json("sampleAge.json", function(error, age) {
 		.attr("class", "sampleBar")
 		.attr("x", function(d) { return x(d.x) + 1; })
 		.attr("y", function(d) { return y(d.y); })
-		.attr("width", x(data[0].dx + data[0].x) - x(data[0].x) - 1)
+		.attr("width", function(d) { return x(d.dx) - 20; })
 		.attr("height", 0)
 		.attr('pointer-events', 'none')
 			.on('mouseover', tip.show)
