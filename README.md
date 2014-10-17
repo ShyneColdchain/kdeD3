@@ -19,5 +19,7 @@ http://bl.ocks.org/Caged/6476579
 Goals: 
 
 1. further interactivity!
-2. metadata appear with mouse over (ex. % female / male) 
-3. both sampleAge and allAge histograms on single plot *DONE* 
+2. metadata appear with mouse over (ex. % female / male) - *INCOMPLETE! Error with logic*
+3. both sampleAge and allAge histograms on single plot - *DONE* 
+
+Not sure how to incorporate metadata (gender) with bins. Histogram is built off of the .age of the data. But data also has a respective .gender (each age has a corresponding gender, either 0 or 1, male or female). I want to calculate the percent male and percent female for each bin in the histogram - in other words, number of 0s vs. number of 1s *OR* number of 0s/1s in each bin divided by total number of 0s/1s in data. NEED HELP HERE! 
