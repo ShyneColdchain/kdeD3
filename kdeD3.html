@@ -9,13 +9,13 @@ body {
 
 .sampleBar {
 	/*fill: #d63378;*/
-	fill: hsla(292, 100%, 79%, .8);
+	fill: hsla(292, 100%, 79%, .6);
 	shape-rendering: crispEdges;
 }
 
 .allBar {
 	/*fill: #00FFFF;*/
-	fill: hsla(0, 0%, 0%, .1);
+	fill: hsla(250, 0%, 0%, .2);
 	shape-rendering: crispEdges;
 }
 
@@ -89,7 +89,7 @@ var x = d3.scale.linear()
     .range([0, width]);
 
 var y = d3.scale.linear()
-    .domain([0, .25])
+    .domain([0, .35])
     .range([height, 0]);
 
 var xAxis = d3.svg.axis()
@@ -107,7 +107,7 @@ var line = d3.svg.line()
 
 var histogram = d3.layout.histogram()
     .frequency(false)
-    .bins(x.ticks(30));
+    .bins(x.ticks(10));
 
 var canvas = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -126,25 +126,126 @@ canvas.append("g")
     .style("text-anchor", "end")
     .text("Age of infected people (year)");
 
-//canvas.append("g")
-//    .attr("class", "y axis")
- //   .call(yAxis);
+canvas.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
 
-d3.json("data/allAge.json", function(error, allAge) {
+d3.json("allAge.json", function(error, popAge) {
+	//var allData = histogram(allAge.age);
+	var allAge = histogram(popAge.age);
+	
+	// total male, total female from binary json 
+	function getCount(gend) { 
+		var i = 0;
+		var male = 0,
+		 female = 0;
+		
+		while (gend[i]){
+			
+			if (gend[i] == 1) {
+				male++;
+			} else if (gend[i] == 0) {
+				female++;
+			}
+			i++;
+		}
+		return [male, female];
+	};
+	
+	var genders = getCount(popAge.gender);
+	var totMale = genders[0];
+	var totFemale = genders[1];
+	
+	console.log(allAge);
+	console.log(allAge[2].length);
+	
+	function binIndex(alpha) {
+		
+		// results are indices + 1 (so -1 laterrr)
+		
+		// bin index - beginning, end 
+		var oneBeg = 0;
+		var oneEnd = alpha[0].length;
+		var twoBeg = oneEnd + 1;
+		var twoEnd = oneEnd + alpha[1].length;
+		var threeBeg = twoEnd + 1;
+		var threeEnd = twoEnd + alpha[2].length;
+		var fourBeg = threeEnd + 1; 
+		var fourEnd = threeEnd + alpha[3].length;
+		var fiveBeg = fourEnd + 1;
+		var fiveEnd = fourEnd + alpha[4].length;
+		
+		return [oneBeg, oneEnd, twoBeg, twoEnd, threeBeg, threeEnd,
+		fourBeg, fourEnd, fiveBeg, fiveEnd];
+	};
+	
+	// worst way to do this! 
+	
+	var binSizes = binIndex(allAge);
+	var end = [];
+	var beg = [];
+	
+	for (i = 0; i < binSizes.length; i++) { 
+		
+		if (i % 2 == 1) {
+			end = end.concat(binSizes[i]); 
+		} else if (i % 2 == 0) {
+			beg = beg.concat(binSizes[i]);
+		} else {
+			return 0;
+		}
+	};
+	
+	/*
+	var oneBeg = binSizes[0];
+	var oneEnd = binSizes[1];
+	var twoBeg = binSizes[2];
+	var twoEnd = binSizes[3];
+	var threeBeg = binSizes[4];
+	var threeEnd = binSizes[5];
+	var fourBeg = binSizes[6];
+	var fourEnd = binSizes[7];
+	var fiveBeg = binSizes[8];
+	var fiveEnd = binSizes[9];*/
+	
+	console.log(binSizes);
+	console.log(beg);
+	console.log(end);
+		
+	var allTip = d3.tip()
+		.attr('class', 'd3-tip')
+		.offset([-10, 0])
+		.html(function(d) { 
+			return "<span style='color:white'>" 
+			+ d3.round((d.y * 100)) + "%" + " male" + "</span>"
+			+ ", " + "<span style='color:eggshell'>"
+			+ d3.round((d.y * 100)) + "%" + " female" + "</span>"; });
 
-	var allData = histogram(allAge);
+	/*var allTip = d3.tip()
+		.attr('class', 'd3-tip')
+		.offset([-10, 0])
+		.html()
+*/
+	canvas.call(allTip);
 
 	var allBars = canvas.selectAll(".allBar")
-		.data(allData)
+		.data(allAge)
 		.enter().insert("rect", ".axis")
-		  .attr("class", "allBar")
-		  .attr("x", function(d) { return x(d.x) + 1; })
-		  .attr("y", function(d) { return y(d.y); })
-		  .attr("width", x(allData[0].dx + allData[0].x) - x(allData[0].x) - 1)
-		  .attr("height", function(d) { return height - y(d.y); });
+			.attr("class", "allBar")
+			.attr("x", function(d) { return x(d.x) + 1; })
+			.attr("y", function(d) { return y(d.y); })
+			.attr("width", x(allAge[0].dx + allAge[0].x) - x(allAge[0].x) - 1)
+			.attr("height", function(d) { return height - y(d.y); })
+			.on('mouseover', allTip.show)
+			.on('mouseout', allTip.hide);
+			
+			/*.append("svg:title")
+				.html(function(d) { 
+					return "<span style='color:white'>" + d3.round((d.y * 100)) 
+					+ "%" + "</span>"; }) */
 })
 
-d3.json("data/sampleAge.json", function(error, age) {
+d3.json("sampleAge.json", function(error, age) {
 	//console.log(age);
 	var minX = d3.min(age);
 	var maxX = d3.max(age);
@@ -156,11 +257,11 @@ d3.json("data/sampleAge.json", function(error, age) {
 
 	//console.log(data);
 	var tip = d3.tip()
-	.attr('class', 'd3-tip')
-	.offset([-10, 0])
-	.html(function(d) { 
-		return "<span style='color:white'>" + d3.round((d.y * 100)) 
-		+ "%" + "</span>" + " infected"; })
+		.attr('class', 'd3-tip')
+		.offset([-10, 0])
+		.html(function(d) { 
+			return "<span style='color:white'>" + d3.round((d.y * 100)) 
+			+ "%" + "</span>" + " infected"; })
 
 
 	/*tip.transition()
@@ -188,20 +289,22 @@ d3.json("data/sampleAge.json", function(error, age) {
 		.delay(500)
 		.attr("height", function(d) { return height - y(d.y); })
 		.transition().attr('pointer-events', '');
-	
-			//.on('mouseover', tip.show)
-			//.on('mouseout', tip.hide);
 		
 	//var allBars = canvas.selectAll(".allBar")
 
 	var tipKDE = d3.tip()
 		.attr('class', 'd3-tip')
-		.style("fill", "white");
+		.offset([-10, 90])
+		.html("Kernel Density Estimation");
+		
+	canvas.call(tipKDE);
 
 	var kdeLine = canvas.append("path")
 		.datum(kde(age))
 		.attr("class", "line")
-		.attr("d", line);
+		.attr("d", line)
+		.on('mouseover', tipKDE.show)
+		.on('mouseout', tipKDE.hide);
 		
 	kdeLine.append("text")
 		.attr("text-anchor", "middle")
