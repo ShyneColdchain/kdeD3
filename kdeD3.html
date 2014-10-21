@@ -99,7 +99,7 @@ var x = d3.scale.linear()
     .range([0, width]);
 
 var y = d3.scale.linear()
-    .domain([0, .35])
+    .domain([0, .4])
     .range([height, 0]);
 
 var xAxis = d3.svg.axis()
@@ -115,10 +115,11 @@ var line = d3.svg.line()
     .x(function(d) { return x(d[0]); })
     .y(function(d) { return y(d[1]); });
 
-var histogram = d3.layout.histogram()
+/*var histogram = d3.layout.histogram()
     .frequency(false)
     .bins(x.ticks(10));
-
+*/
+	
 var canvas = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -141,121 +142,49 @@ canvas.append("g")
     .call(yAxis);
 
 d3.json("allAge.json", function(error, data) {
-	//var allData = histogram(allAge.age);
-	var allAge = histogram(data.age);
 	
-	// data = object containing age and gender arrays
-	
-	var total = [allAge, data.gender];
-	
-	console.log(total);
-	console.log(total[1]);
-	
-	// total male, total female from binary json 
-	/*function getCount(gend) { 
-		var i = 0;
-		var male = 0,
-		 female = 0;
+	// zip together and format 
+	data = d3.zip(data.age, data.gender).map(function (d) { 
+		age = +d[0];
+		gender = +d[1];
 		
-		while (gend[i]){
-			
-			if (gend[i] == 1) {
-				male++;
-			} else if (gend[i] == 0) {
-				female++;
-			}
-			i++;
-		}
-		return [male, female];
-	};
+		// return object for each age + gender pair
+		return {age: age, gender: gender};
+	});
 	
-	var genders = getCount(data.gender);
-	var totMale = genders[0];
-	var totFemale = genders[1];*/
+	//x.domain(d3.extent(data, function(d) { return d.age; }));
+	//y.domain(d3.extent(data, function(d) { return d.gender; }));
 	
-	console.log(allAge);
-	console.log(allAge[2].length);
-	
-	/*function binIndex(alpha) {
-		
-		// results are indices + 1 (so -1 laterrr)
-		
-		// bin index - beginning, end 
-		var oneBeg = 0;
-		var oneEnd = alpha[0].length;
-		var twoBeg = oneEnd + 1;
-		var twoEnd = oneEnd + alpha[1].length;
-		var threeBeg = twoEnd + 1;
-		var threeEnd = twoEnd + alpha[2].length;
-		var fourBeg = threeEnd + 1; 
-		var fourEnd = threeEnd + alpha[3].length;
-		var fiveBeg = fourEnd + 1;
-		var fiveEnd = fourEnd + alpha[4].length;
-		
-		return [oneBeg, oneEnd, twoBeg, twoEnd, threeBeg, threeEnd,
-		fourBeg, fourEnd, fiveBeg, fiveEnd];
-	};
-	
-	// worst way to do this! 
-	
-	var binSizes = binIndex(allAge);
-	var end = [];
-	var beg = [];
-	
-	for (i = 0; i < binSizes.length; i++) { 
-		
-		if (i % 2 == 1) {
-			end = end.concat(binSizes[i]); 
-		} else if (i % 2 == 0) {
-			beg = beg.concat(binSizes[i]);
-		} else {
-			return 0;
-		}
-	};
-	*/
-	/*
-	var oneBeg = binSizes[0];
-	var oneEnd = binSizes[1];
-	var twoBeg = binSizes[2];
-	var twoEnd = binSizes[3];
-	var threeBeg = binSizes[4];
-	var threeEnd = binSizes[5];
-	var fourBeg = binSizes[6];
-	var fourEnd = binSizes[7];
-	var fiveBeg = binSizes[8];
-	var fiveEnd = binSizes[9];*/
-	
-	//console.log(binSizes);
-	//console.log(beg);
-	//console.log(end);
-	
-		
+	var allAge = d3.layout.histogram()
+	    .frequency(false)
+	    .bins(x.ticks(10))
+		.value( function (d) { return d.age; })
+		(data);
+
+	// data = object containing age and gender arrays		
 	var allTip = d3.tip()
 		.attr('class', 'd3-tip')
 		.offset([-10, 0])
-		.html(function(d) { 
-			return "<span style='color:white'>" 
-			+ d3.round((d.y * 100)) + "%" + " male" + "</span>"
-			+ ", " + "<span style='color:eggshell'>"
-			+ d3.round((d.y * 100)) + "%" + " female" + "</span>"; });
-
-	/*var allTip = d3.tip()
-		.attr('class', 'd3-tip')
-		.offset([-10, 0])
-		.html()
-*/
+		.html(function(d, i) { 
+			return "<span style='color:#FF99FF'>" 
+			+ d3.round((d.y * 100)) + "% infected: " + "</span>"
+			+ "<span style='color:lightgray'>"
+			+ d3.round(genderCount(d, 0)) + "% male, " + "</span>"
+			+ "<span style='color:eggwhite'>"
+			+ d3.round(genderCount(d, 1)) + "% female" + "</span>"; });
+	
 	canvas.call(allTip);
 
 	var allBars = canvas.selectAll(".allBar")
 		//.data(total, function(d) { return d.allAge; })
-		.data(total)
+		.data(allAge)
 		.enter().insert("rect", ".axis")
 			.attr("class", "allBar")
-			.attr("x", function(d) { return x(d[allAge].x) - 15; })
-			.attr("y", function(d) { return y(d[allAge].y); })
+			.attr("x", function(d) { return x(d.x) - 15; })
+			.attr("y", function(d) { return y(d.y); })
 			//.attr("width", x(allAge[0].dx + allAge[0].x) - x(allAge[0].x) - 1)
-			.attr("width", function(d) { return x(d[allAge].dx) - 15; })
-			.attr("height", function(d) { return height - y(d[allAge].y); })
+			.attr("width", function(d) { return x(d.dx) - 15; })
+			.attr("height", function(d) { return height - y(d.y); })
 			.on('mouseover', allTip.show)
 			.on('mouseout', allTip.hide);
 			
@@ -265,11 +194,41 @@ d3.json("allAge.json", function(error, data) {
 					+ "%" + "</span>"; }) */
 })
 
-d3.json("sampleAge.json", function(error, age) {
+d3.json("sample500.json", function(error, data) {
 	//console.log(age);
-	var minX = d3.min(age);
-	var maxX = d3.max(age);
+	//var minX = d3.min(age);
+	//var maxX = d3.max(age);
 	
+	// zip together and format 
+	sampleData = d3.zip(data.age, data.gender).map(function (d) { 
+		age = +d[0];
+		gender = +d[1];
+		
+		// return object for each age + gender pair
+		return {age: age, gender: gender};
+	});
+
+	var allAge = d3.layout.histogram()
+	    .frequency(false)
+	    .bins(x.ticks(30))
+		.value( function (d) { return d.age; })
+		(sampleData);
+
+	// data = object containing age and gender arrays		
+	var sampleTip = d3.tip()
+		.attr('class', 'd3-tip')
+		.offset([-10, 0])
+		.html(function(d, i) { 
+			return "<span style='color:#FF99FF'>" 
+			+ d3.round((d.y * 100)) + "% infected: " + "</span>"
+			+ "<span style='color:lightgray'>"
+			+ d3.round(genderCount(d, 0)) + "% male, " + "</span>"
+			+ "<span style='color:eggwhite'>"
+			+ d3.round(genderCount(d, 1)) + "% female" + "</span>"; });
+			
+	var kde = kernelDensityEstimator(epanechnikovKernel(4), x.ticks(100));
+			
+	/*		
 	var data = histogram(age),
 		kde = kernelDensityEstimator(epanechnikovKernel(7), x.ticks(100));
 
@@ -282,26 +241,26 @@ d3.json("sampleAge.json", function(error, age) {
 		.html(function(d) { 
 			return "<span style='color:white'>" + d3.round((d.y * 100)) 
 			+ "%" + "</span>" + " infected"; })
-
+*/
 
 	/*tip.transition()
 		.attr("y", function(d) {
 			return height - y(d.y) * 1.5;
 		});
 */
-	canvas.call(tip);
-
+	canvas.call(sampleTip);
+	
 	var sampleBars = canvas.selectAll(".sampleBar")
-	  .data(data)
+	  .data(allAge)
 	.enter().insert("rect", ".axis")
 		.attr("class", "sampleBar")
 		.attr("x", function(d) { return x(d.x) + 1; })
 		.attr("y", function(d) { return y(d.y); })
-		.attr("width", function(d) { return x(d.dx) - 20; })
+		.attr("width", function(d) { return x(d.dx) - 10; })
 		.attr("height", 0)
 		.attr('pointer-events', 'none')
-			.on('mouseover', tip.show)
-			.on('mouseout', tip.hide);
+			.on('mouseover', sampleTip.show)
+			.on('mouseout', sampleTip.hide);
 		
 	sampleBars
 		.transition()
@@ -314,13 +273,13 @@ d3.json("sampleAge.json", function(error, age) {
 
 	var tipKDE = d3.tip()
 		.attr('class', 'd3-tip')
-		.offset([-10, 90])
+		.offset([50, 50])
 		.html("Kernel Density Estimation");
 		
 	canvas.call(tipKDE);
 
 	var kdeLine = canvas.append("path")
-		.datum(kde(age))
+		.datum(kde(data.age))
 		.attr("class", "line")
 		.attr("d", line)
 		.on('mouseover', tipKDE.show)
@@ -343,7 +302,7 @@ d3.json("sampleAge.json", function(error, age) {
 			.attr("stroke-dashoffset", 0)
 			.style("fill-opacity", 0.8);
 		 
-		 
+		
 	// .attrTween("d", pathTween);
 	 /* function pathTween() { 
 	  	var interpolate = d3.scale.quantile() 
@@ -361,6 +320,34 @@ d3.json("sampleAge.json", function(error, age) {
 	  .transition()
 		  .ease("elastic");*/
 });
+
+// find % male / female for each bin
+function genderCount(d, gend) { 
+
+	var z = 0,
+		female = 0,
+		male = 0,
+		freqMale = 0,
+		freqFemale = 0;
+	
+	while (d[z]) {
+		if (d[z].gender == 1) {
+			male++;
+		} else { 
+			female++;
+		};
+		z++;
+	};
+	
+	if (gend == 0) {
+		freqMale = 100 * (male / (male + female));
+		return freqMale;
+	} else {
+		freqFemale = 100 * (female / (male + female)); 
+		return freqFemale;
+	};
+	//return [male, female];
+}
 
 function kernelDensityEstimator(kernel, x) {
   return function(sample) {
