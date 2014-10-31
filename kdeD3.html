@@ -99,7 +99,7 @@ var x = d3.scale.linear()
     .range([0, width]);
 
 var y = d3.scale.linear()
-    .domain([0, .4])
+    .domain([0, .2])
     .range([height, 0]);
 
 var xAxis = d3.svg.axis()
@@ -157,7 +157,7 @@ d3.json("allAge.json", function(error, data) {
 	
 	var allAge = d3.layout.histogram()
 	    .frequency(false)
-	    .bins(x.ticks(10))
+	    .bins(x.ticks(20))
 		.value( function (d) { return d.age; })
 		(data);
 
@@ -171,34 +171,28 @@ d3.json("allAge.json", function(error, data) {
 			+ "<span style='color:lightgray'>"
 			+ d3.round(genderCount(d, 0)) + "% male, " + "</span>"
 			+ "<span style='color:eggwhite'>"
-			+ d3.round(genderCount(d, 1)) + "% female" + "</span>"; });
+			+ d3.round(genderCount(d, 1)) + "% female" + "</span>"
+			+ makePie(genderCount(d, 0), genderCount(d, 1)); });
 	
 	canvas.call(allTip);
 
 	var allBars = canvas.selectAll(".allBar")
-		//.data(total, function(d) { return d.allAge; })
 		.data(allAge)
 		.enter().insert("rect", ".axis")
 			.attr("class", "allBar")
 			.attr("x", function(d) { return x(d.x) - 15; })
 			.attr("y", function(d) { return y(d.y); })
-			//.attr("width", x(allAge[0].dx + allAge[0].x) - x(allAge[0].x) - 1)
 			.attr("width", function(d) { return x(d.dx) - 15; })
 			.attr("height", function(d) { return height - y(d.y); })
 			.on('mouseover', allTip.show)
 			.on('mouseout', allTip.hide);
 			
-			/*.append("svg:title")
-				.html(function(d) { 
-					return "<span style='color:white'>" + d3.round((d.y * 100)) 
-					+ "%" + "</span>"; }) */
+						
+
 })
 
-d3.json("sample500.json", function(error, data) {
-	//console.log(age);
-	//var minX = d3.min(age);
-	//var maxX = d3.max(age);
-	
+d3.json("sample500_2.json", function(error, data) {
+
 	// zip together and format 
 	sampleData = d3.zip(data.age, data.gender).map(function (d) { 
 		age = +d[0];
@@ -226,41 +220,27 @@ d3.json("sample500.json", function(error, data) {
 			+ "<span style='color:eggwhite'>"
 			+ d3.round(genderCount(d, 1)) + "% female" + "</span>"; });
 			
-	var kde = kernelDensityEstimator(epanechnikovKernel(4), x.ticks(100));
-			
-	/*		
-	var data = histogram(age),
-		kde = kernelDensityEstimator(epanechnikovKernel(7), x.ticks(100));
-
-	//var tipPlot = histogram(age);	
-
-	//console.log(data);
-	var tip = d3.tip()
-		.attr('class', 'd3-tip')
-		.offset([-10, 0])
-		.html(function(d) { 
-			return "<span style='color:white'>" + d3.round((d.y * 100)) 
-			+ "%" + "</span>" + " infected"; })
-*/
-
-	/*tip.transition()
-		.attr("y", function(d) {
-			return height - y(d.y) * 1.5;
-		});
-*/
+	var kde = kernelDensityEstimator(epanechnikovKernel(6), x.ticks(100));
+	
 	canvas.call(sampleTip);
 	
 	var sampleBars = canvas.selectAll(".sampleBar")
 	  .data(allAge)
 	.enter().insert("rect", ".axis")
 		.attr("class", "sampleBar")
-		.attr("x", function(d) { return x(d.x) + 1; })
+		.attr("x", function(d) { return x(d.x) - 5; })
 		.attr("y", function(d) { return y(d.y); })
-		.attr("width", function(d) { return x(d.dx) - 10; })
+		.attr("width", function(d) { return x(d.dx) - 15; })
 		.attr("height", 0)
 		.attr('pointer-events', 'none')
 			.on('mouseover', sampleTip.show)
 			.on('mouseout', sampleTip.hide);
+			/*.on("mouseover", function(d, i) {		
+				renderArc
+					.attr("fill-opacity", 0.6); })
+			.on("mouseout", function(d, i) {
+				renderArc
+					.attr("fill-opacity", 0.0); })*/
 		
 	sampleBars
 		.transition()
@@ -268,12 +248,10 @@ d3.json("sample500.json", function(error, data) {
 		.delay(500)
 		.attr("height", function(d) { return height - y(d.y); })
 		.transition().attr('pointer-events', '');
-		
-	//var allBars = canvas.selectAll(".allBar")
 
 	var tipKDE = d3.tip()
 		.attr('class', 'd3-tip')
-		.offset([50, 50])
+		.offset([-20, 110])
 		.html("Kernel Density Estimation");
 		
 	canvas.call(tipKDE);
@@ -301,24 +279,6 @@ d3.json("sample500.json", function(error, data) {
 			.ease("linear")
 			.attr("stroke-dashoffset", 0)
 			.style("fill-opacity", 0.8);
-		 
-		
-	// .attrTween("d", pathTween);
-	 /* function pathTween() { 
-	  	var interpolate = d3.scale.quantile() 
-	  		.domain([0, 1])
-	  		.range(d3.range(1, kde(age) + 1));
-	  	return function(d) {
-	  		return line(kde(age).slice(0, interpolate(d)));
-	  	};
-	  }
-
-	canvas.append("path")
-	  .datum(kde(age))
-	  .attr("class", "line")
-	  .attr("d", line)
-	  .transition()
-		  .ease("elastic");*/
 });
 
 // find % male / female for each bin
@@ -348,6 +308,54 @@ function genderCount(d, gend) {
 	};
 	//return [male, female];
 }
+
+function makePie(freqMale, freqFemale) { 
+	
+	var data = [{"label":"Male", "value":freqMale},
+				{"label":"Female", "value":freqFemale}];
+				
+	var colors = ["red", "blue"];
+	
+	var colorscale = d3.scale.linear().domain([0, data.length])
+						.range(colors);
+						
+	var arc = d3.svg.arc()
+			.innerRadius(0)
+			.outerRadius(50);
+	
+	var pie = d3.layout.pie()
+			.value(function(d) { return d.value; });
+			
+	var renderArc = canvas.append("g")
+			.attr("transform", "translate(75, 75)")
+			.selectAll(".arc")
+			.data(pie(data))
+			.enter()
+			.append("g")
+			.attr("class", "arc");
+			
+		renderArc.append("path")
+			.attr("d", arc)
+			.attr("fill", function(d, i) { 
+				return colorscale(i); })
+			.attr("fill-opacity", 0.0)
+			.transition()
+			.duration(2000)
+			.attr("fill-opacity", 0.6)
+			.transition()
+			.duration(3000)
+			.attr("fill-opacity", 0.0);
+			
+		/*renderArc
+			.on("mouseover", function(d, i) {
+				d3.select(this)
+				.attr("fill-opacity", 0.6); })
+			.on("mouseout", function(d, i) {
+				d3.select(this)
+				.attr("fill-opacity", 0.0); })
+		*/	
+	return "";
+};
 
 function kernelDensityEstimator(kernel, x) {
   return function(sample) {
